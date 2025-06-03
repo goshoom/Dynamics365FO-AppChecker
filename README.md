@@ -1,7 +1,7 @@
 This fork of [the Microsoft project](https://github.com/microsoft/Dynamics365FO-AppChecker) was created because code of the original project stopped working in 2024.
 Hopefully it's just temporary and the original project will become maintained again.
 
-I removed all AI-related stuff and fixed formatting of the XML result, because the wrong formatting preventing X++ source code from loading.
+I removed all AI-related stuff from Socratex Explorer and fixed formatting of the XML result, because the wrong formatting preventing X++ source code from loading.
 
 <hr />
 
