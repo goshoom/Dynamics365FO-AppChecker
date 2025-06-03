@@ -17,10 +17,10 @@ jobs:
     steps:
         # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
         - name: Checkout the code...
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
 
         - name: Setup .NET core
-          uses: actions/setup-dotnet@v1
+          uses: actions/setup-dotnet@v4
           with:
              dotnet-version: '5.0' # SDK Version to use.
 
@@ -28,7 +28,7 @@ jobs:
           run: dotnet publish -r win-x64  --self-contained true -c Release -p:PublishSingleFile=true  "tools\Workflows\BulkQuery\BulkQuery.netcore.csproj"
 
         - name: Upload compiled app so it can be downloaded.
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v4
           with:
              name: BulkQuery.netcore
              path: "tools\\Workflows\\BulkQuery\\bin\\Release\\net5.0\\win-x64\\publish"
