@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 using BaseXInterface;
-using ICSharpCode.SharpDevelop.Editor;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -18,6 +17,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
@@ -286,7 +286,7 @@ namespace XppReasoningWpf.ViewModels
                     new Tuple<string, string>(settings.ExternalVariableName6, settings.ExternalVariableValue6),
                     new Tuple<string, string>(settings.ExternalVariableName7, settings.ExternalVariableValue7));
 
-                return result;
+                return FormatXml(result);
             }
             catch (Exception e)
             {
@@ -299,6 +299,46 @@ namespace XppReasoningWpf.ViewModels
             }
 
             return result;
+        }
+
+        private string FormatXml(string input)
+        {
+            // Two things may happen, assuming that our query finds multiple elements:
+            // - BaseX returns a single result, because we've wrapped the result in an XML element. We get valid XML, but without line breaks.
+            //      Loading of source code won't work, because it works based on a selection of the line with a given element, but we have
+            //      everything on a single line. The solution is adding line breaks to the string.
+            // - BaseX return multiple results. It automatically applies line breaks, but we can't load that to XDocument for source code
+            //      references, because it's not valid XML. We need to add a root node of the elements returned by BaseX.
+
+            try
+            {
+                XDocument doc = XDocument.Parse(input, LoadOptions.SetLineInfo);
+
+                XmlWriterSettings settings = new XmlWriterSettings
+                {
+                    Indent = true,
+                    OmitXmlDeclaration = true
+                };
+
+                using (var stringWriter = new StringWriter())
+                using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+                {
+                    doc.Save(xmlWriter);
+                    xmlWriter.Flush();
+                    return stringWriter.ToString();
+                }
+
+            }
+            catch (XmlException ex)
+            {
+                if (ex.Message.StartsWith("There are multiple root elements"))
+                {
+                    return FormatXml($"<root>\r\n{input}\r\n</root>"); // Recursion
+                }
+
+                // We're unable to format it, therefore we return unmodified input.
+                return input;
+            }
         }
 
         public TabItem CreateNewQueryTabItem()
