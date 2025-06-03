@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Microsoft.Win32;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using System.ComponentModel;
@@ -35,7 +37,7 @@ namespace XppReasoningWpf
 
         public MainWindow()
         {
-            SplashScreen splash = new SplashScreen("Images/SplashScreen with Descartes.png");
+            SplashScreen splash = new SplashScreen("Images/SplashScreen with socrates.png");
             splash.Show(false);
             Thread.Sleep(2000);
 
@@ -47,19 +49,17 @@ namespace XppReasoningWpf
 
             InitializeComponent();
 
-            // For some reason this is required for getting the command parameter 
+            // For some reason this is required for getting the commandparameter 
             // binding mechanism to work for menu items
             this.ExecuteQueryMenuItem.DataContext = this.ViewModel;
 
             this.ResultsEditor.TextArea.Caret.PositionChanged += ResultNavigated;
-            DetailsTab.SelectionChanged += this.ViewModel.DetailsTab_SelectionChanged;
 
             // var isOnline = this.Model.Server.IsServerOnline();
 
             // If this is not zero, the combobox below disappears...
             splash.Close(TimeSpan.FromSeconds(0));
 
-#if !DEBUG
             ConnectionWindow w = new ConnectionWindow(this.Model);
             var result = w.ShowDialog();
 
@@ -68,10 +68,7 @@ namespace XppReasoningWpf
                 Environment.Exit(0);
                 return;
             }
-#else
-            this.Model.CreateServer(Properties.Settings.Default.Server, Properties.Settings.Default.Port, "admin", "admin");
 
-#endif
             try
             {
                 // This call may throw when Basex complains when connecting or
@@ -85,27 +82,6 @@ namespace XppReasoningWpf
 
             // Create the first query page
             this.ViewModel.CreateNewQueryTabItem();
-
-            // TODO: REMOVE
-            var newTab = new TabItem() { Header = new TextBlock() { Text = "Test" } };
-            this.DetailsTab.Items.Add(newTab);
-            var newEditor = new XppSourceEditor();
-            newEditor.Text = @"
-/// <Summary>
-/// This is a test class
-/// </Summary>
-class C
-{
-    /// <Summary>
-    /// This is a test method that does nothing.
-    /// </Summary>
-    public void foo()
-    {
-    }
-}";
-            newEditor.WordWrap = true;
-            newEditor.IsReadOnly = false;
-            newTab.Content = newEditor;
         }
 
         /// <summary>
@@ -293,28 +269,6 @@ class C
                 || string.Compare(name, "Type", StringComparison.OrdinalIgnoreCase) == 0;
         }
 
-        private static bool ContainsCoordinates(XElement node)
-        {
-            if (node == null)
-                throw new ArgumentException(nameof(node));
-
-            if ((node.Attribute("StartLine") != null)
-               && (node.Attribute("EndLine") != null))
-            {
-                return true;
-            }
-            return false;  
-        }
-
-        private static string? GetArtifactFromAncestorsOrSelf(XElement node)
-        {
-            if (node == null)
-                throw new ArgumentException(nameof(node));
-
-            return node.XPathSelectElement("ancestor-or-self::*[@Artifact]")?.Attribute("Artifact")?.Value ?? null;
-        }
-
-
         /// <summary>
         /// Called when the user changes the position in the result view.
         /// </summary>
@@ -470,8 +424,8 @@ class C
                                             int sl = -1, sc = -1, el = -1, ec = -1;
                                             FindPositionsInSelf(positionElement, ref sl, ref sc, ref el, ref ec);
 
-                                            if (kind == "form"
-                                             || kind == "query"
+                                            if (kind == "form" 
+                                             || kind == "query" 
                                              || kind == "table" || kind == "map" || kind == "view"
                                              || kind == "class"
                                              || kind == "dataentity")
@@ -483,28 +437,10 @@ class C
                                             {
                                                 this.ShowSourceAt(artifact, "C#", sl, sc, el, ec);
                                             }
-                                            else
-                                            {
-                                                this.ShowSourceAt(artifact, "X++", sl, sc, el, ec);
-                                                return;
-                                            }
                                         }
                                     }
                                 }
-                                else if (ContainsCoordinates(positionElement))
-                                {
-                                    int sl = -1, sc = -1, el = -1, ec = -1;
-                                    FindPositionsInSelfOrAncestor(positionElement, ref sl, ref sc, ref el, ref ec);
 
-                                    // The current element contains positional information. Look for the
-                                    // artifact information in self or ancestor nodes.
-                                    string? artifactProperty = GetArtifactFromAncestorsOrSelf(positionElement);
-                                    if (artifactProperty != null)
-                                    {
-                                        this.ShowSourceAt(artifactProperty, "X++", sl, sc, el, ec);
-                                        return;
-                                    }
-                                }
                                 positionElement = positionElement.Parent;
                             }
                         }
@@ -559,8 +495,7 @@ class C
             TabControl details = this.DetailsTab;
             foreach (Wpf.Controls.TabItem item in details.Items)
             {
-                var tag = (string)item.Tag; 
-                string id = tag;
+                string id = item.Tag as string;
                 if (id == name)
                 {
                     // Got it. Go there and set the position.
@@ -597,12 +532,13 @@ class C
             else 
                 editor = new SourceEditor();
 
-            var text = await sourcePromise;
-            editor.Text = text ?? "No source found for " + name + " in " + language;
-
             tab.Content = editor;
             details.Items.Add(tab);
             details.SelectedItem = tab;
+
+            var text = await sourcePromise;
+
+            editor.Text = text ?? "No source found for " + name + " in " + language;
 
             await editor.Dispatcher.BeginInvoke(new Action(delegate { editor.SetPosition(sl, sc, el, ec); }), DispatcherPriority.ApplicationIdle);
 
@@ -707,7 +643,5 @@ class C
                 this.ViewModel.OpenFileInTab(filename);
             }
         }
-
-
     }
 }

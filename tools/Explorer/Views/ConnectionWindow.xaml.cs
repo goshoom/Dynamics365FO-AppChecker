@@ -52,6 +52,7 @@ namespace XppReasoningWpf
 
             try
             {
+
                 bool connectionEstablished = await this.model.IsServerOnlineAsync(
                     Properties.Settings.Default.Server, Properties.Settings.Default.Port,
                     this.Username, this.Password);

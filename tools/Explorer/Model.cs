@@ -177,21 +177,6 @@ namespace XppReasoningWpf
             }
         }
 
-        public QueryProviderType QueryProvider
-        {
-            get => (QueryProviderType)Properties.Settings.Default.Provider;
-            set
-            {
-                if (value != QueryProvider)
-                {
-                    Properties.Settings.Default.Provider = (int)value;
-                    this.OnPropertyChanged(nameof(QueryProvider));
-                }
-            }
-        }
-
-
-
         /// <summary>
         /// Gets the directory hosting the queries.
         /// </summary>
@@ -204,8 +189,6 @@ namespace XppReasoningWpf
                 return queriesDirectory;
             }
         }
-
-        public static string SystemPrompt = File.ReadAllText("Assets\\SystemPrompt.txt");
 
         public delegate void TickEventHandler(object sender, EventArgs e);
         public event TickEventHandler Tick;
