@@ -12,18 +12,15 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.IO;
-using System.Threading;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace BaseXInterface
 {
-    public class Session 
+    public class Session
     {
         private readonly byte[] cache = new byte[4096];
-        private NetworkStream stream;
-        private TcpClient socket;
+        private readonly NetworkStream stream;
+        private readonly TcpClient socket;
         private string info = "";
         private int bpos;
         private int bsize;
@@ -54,7 +51,7 @@ namespace BaseXInterface
             }
 
             Send(username);
-            Send(MD5(MD5(code) + nonce));
+            Send(MD5Encode(MD5Encode(code) + nonce));
             if (stream.ReadByte() != 0)
             {
                 throw new IOException("Access denied.");
@@ -234,10 +231,10 @@ namespace BaseXInterface
             return Read() == 0;
         }
 
-        private string MD5(string input)
+        private string MD5Encode(string input)
         {
-            MD5CryptoServiceProvider MD5 = new MD5CryptoServiceProvider();
-            byte[] hash = MD5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var provider = MD5.Create();
+            byte[] hash = provider.ComputeHash(Encoding.UTF8.GetBytes(input));
 
             StringBuilder sb = new StringBuilder();
             foreach (byte h in hash)
